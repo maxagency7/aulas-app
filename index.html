@@ -118,8 +118,8 @@ label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin:12p
 <script>
 /* ===== dados ===== */
 const KEY='mili.aulas.v1';
-const fresh=()=>({students:[],lessons:[],fees:{},settings:{name:'Mili',pix:''}});
-const norm=d=>{d.settings=d.settings||{name:'Mili',pix:''};d.fees=d.fees||{};return d};
+const fresh=()=>({students:[],lessons:[],fees:{},nf:{},settings:{name:'Mili',pix:''}});
+const norm=d=>{d.settings=d.settings||{name:'Mili',pix:''};d.fees=d.fees||{};d.nf=d.nf||{};return d};
 let db=(()=>{try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.students&&d.lessons)return norm(d)}catch(e){}return fresh()})();
 const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
@@ -282,7 +282,7 @@ function vRel(){
  else if(ui.rep.sid==='all'){const g=groupBy(ls);
   det='<div class="list">'+Object.keys(g).map(k=>{const s=S(k),arr=g[k],fee=fs.find(f=>f.sid===k),v=arr.reduce((a,l)=>a+l.price,0)+(fee?fee.value:0);
    return `<div class="li"><span class="bar" style="background:${KC[kindOf(s)]}"></span><div class="g"><b>${esc(s.name)}</b><small>${arr.length} aula${arr.length>1?'s':''} · ${hoursFmt(arr.reduce((a,l)=>a+l.dur,0))}${isClt(s)?' · CLT':''}${payOf(s)==='mensal'?' · mensal':''}</small></div><div class="r">${brl(v)}</div></div>`}).join('')+'</div>'}
- else det='<div class="list">'+ls.map(l=>`<div class="li" data-act="edit-lesson" data-arg="${l.id}" style="cursor:pointer"><div class="g"><b>${DOWS[parse(l.date).getDay()]}, ${dm(l.date)}</b><small>${l.time}–${endT(l)} · ${l.paid?'pago':isDone(l)?'a receber':'agendada'}${l.status==='falta'?' · falta':''}</small></div><div class="r">${payOf(S(l.sid))==='mensal'?'—':brl(l.price)}</div></div>`).join('')+fs.map(f=>`<div class="li"><div class="g"><b>Mensalidade</b><small>${f.paid?'pago':'a receber'}</small></div><div class="r">${brl(f.value)}</div></div>`).join('')+'</div>';
+ else det='<div class="list">'+ls.map(l=>`<div class="li" data-act="edit-lesson" data-arg="${l.id}" style="cursor:pointer"><div class="g"><b>${DOWS[parse(l.date).getDay()]}, ${dm(l.date)}</b><small>${l.time}–${endT(l)} · ${l.paid?'pago':isDone(l)?'a receber':'agendada'}${l.status==='falta'?' · falta':''}</small></div><div class="r">${payOf(S(l.sid))==='mensal'?'—':brl(l.price)}</div></div>`).join('')+fs.map(f=>`<div class="li"><div class="g"><b>Mensalidade</b><small>${f.paid?'pago':'a receber'}${S(f.sid).nf?(db.nf[f.sid+':'+f.ym]?' · NF emitida':' · NF pendente'):''}</small></div><div class="r">${brl(f.value)}</div></div>`).join('')+'</div>';
  const hasMensal=ui.rep.mode==='week'&&db.students.some(s=>payOf(s)==='mensal'&&(ui.rep.sid==='all'||ui.rep.sid===s.id)&&db.lessons.some(l=>l.sid===s.id&&l.date>=r.a&&l.date<=r.b&&l.status!=='cancelada'));
  return band('Acompanhe seus ganhos','Relatórios')+`<div class="sec">
  <div class="seg"><button class="${ui.rep.mode==='week'?'on':''}" data-act="rmode" data-arg="week">Semana</button><button class="${ui.rep.mode==='month'?'on':''}" data-act="rmode" data-arg="month">Mês</button></div>
@@ -301,11 +301,16 @@ function pending(){const g={};const get=sid=>g[sid]=g[sid]||{ls:[],fees:[]};
  Object.values(g).forEach(o=>o.ls.sort(cmp));return g}
 function vCobrar(){const g=pending(),ks=Object.keys(g);
  const cards=ks.map(k=>{const s=S(k),o=g[k],tot=cobTotal(k,o),clt=isClt(s);
-  const chips=o.ls.map(l=>`<span class="chip">${dm(l.date)}</span>`).join('')+o.fees.map(y=>`<span class="chip">mensal ${MON[+y.slice(5)-1].slice(0,3)}</span>`).join('');
+  const chips=o.ls.map(l=>`<span class="chip">${dm(l.date)}</span>`).join('')+o.fees.map(y=>`<span class="chip">mensal ${MON[+y.slice(5)-1].slice(0,3)}${s.nf?(db.nf[k+':'+y]?' · NF emitida':' · sem NF'):''}</span>`).join('');
   const n=o.ls.length+o.fees.length;
   return `<div class="card" style="border-left:6px solid ${KC[kindOf(s)]}"><div class="t"><div class="n">${esc(s.name)}</div><span class="chip warn">${brl(tot)}</span></div><div class="a">${clt?'Salário CLT · ':''}${n} item${n>1?'s':''} sem pagamento</div><div class="dates">${chips}</div><div class="btns">${clt?'':`<button class="btn pri" data-act="charge" data-arg="${k}">Cobrar no WhatsApp</button>`}<button class="btn" data-act="paid" data-arg="${k}">${clt?'Marcar recebido':'Marcar pago'}</button></div></div>`}).join('');
  const total=ks.reduce((a,k)=>a+cobTotal(k,g[k]),0);
- return band('Mensagem amigável pronta','Cobrar')+`<div class="sec">${ks.length?`<div class="tile dk"><small>Total a receber</small><b>${brl(total)}</b></div>${cards}`:`<div class="empty"><h3>Tudo em dia</h3>Nada pendente de pagamento.</div>`}</div>`}
+ const nfs=nfPending();
+ const nfCards=nfs.length?`<div class="sec-h" style="margin-top:6px"><h2>Notas fiscais a emitir</h2></div>`+nfs.map(n=>`<div class="card" style="border-left:6px solid ${KC[kindOf(S(n.sid))]}"><div class="t"><div class="n">${esc(S(n.sid).name)}</div><span class="chip warn">NF ${cap(MON[+n.ym.slice(5)-1]).slice(0,3)}/${n.ym.slice(2,4)}</span></div><div class="a">Nota de ${MON[+n.ym.slice(5)-1]} ainda não emitida</div><div class="btns"><button class="btn" data-act="nf-done" data-arg="${n.sid}:${n.ym}">Marcar nota emitida</button></div></div>`).join(''):'';
+ return band('Mensagem amigável pronta','Cobrar')+`<div class="sec">${ks.length?`<div class="tile dk"><small>Total a receber</small><b>${brl(total)}</b></div>${cards}`:(nfs.length?'':`<div class="empty"><h3>Tudo em dia</h3>Nada pendente de pagamento.</div>`)}${nfCards}</div>`}
+function nfPending(){const seen={},out=[];
+ db.lessons.forEach(l=>{const s=S(l.sid);if(!s||!s.nf||!isDone(l))return;const y=ymOf(l.date),key=s.id+':'+y;if(!db.nf[key]&&!seen[key]){seen[key]=1;out.push({sid:s.id,ym:y})}});
+ return out.sort((a,b)=>a.ym.localeCompare(b.ym))}
 
 function nav(){const t=ui.tab;const b=(k,i,l)=>`<button class="${t===k?'on':''}" data-act="tab" data-arg="${k}">${ic(i,22)}${l}</button>`;
  return `<div class="nav"><div class="pill">${b('hoje','home','Hoje')}${b('alunos','users','Clientes')}<button class="fab" data-act="new" aria-label="Nova aula">${ic('plus',26)}</button>${b('rel','chart','Relatório')}${b('cobrar','coin','Cobrar')}</div></div>`}
@@ -321,6 +326,7 @@ function sheetHTML(){const sh=ui.sheet,d=sh.d;let h='';
   ${d.kind==='escola'?sel('Vínculo','vinc',[['clt','CLT – horista (carteira assinada)'],['autonoma','Sem carteira assinada']],d.vinc||'clt'):''}
   ${sel('Forma de pagamento','pay',[['aula','Por aula'],['hora','Por hora'],['mensal','Valor mensal fixo']],d.pay,'pay')}
   ${fld(pl,'price',d.price,'number','min="0" step="0.01" inputmode="decimal"')}
+  ${sel('Emite nota fiscal para este cliente?','nf',[['0','Não'],['1','Sim (com o seu CNPJ)']],d.nf===true||d.nf==='1'?'1':'0')}
   ${fld('WhatsApp (com DDD)','phone',d.phone,'tel','placeholder="(84) 99999-9999"')}
   ${fld('Endereço','addr',d.addr,'text','placeholder="Rua, número, bairro"')}
   <div class="two"><div>${fld('Duração padrão (min)','dur',d.dur,'number','min="15" step="5" inputmode="numeric"')}</div><div>${fld('Aulas por semana (guia)','perWeek',d.perWeek,'number','min="1" max="7" inputmode="numeric"')}</div></div>
@@ -361,11 +367,11 @@ const A={
  wk(a){ui.sel=ymd(addDays(parse(ui.sel),+a));render()},
  mnav(a){const s=parse(ui.sel);ui.sel=ymd(new Date(s.getFullYear(),s.getMonth()+ +a,1));render()},
  settings(){openSheet('settings',{})},
- 'student-new'(){openSheet('student',{name:'',kind:'aluno',pay:'aula',vinc:'',phone:'',addr:'',perWeek:1,dur:60,price:80})},
+ 'student-new'(){openSheet('student',{name:'',kind:'aluno',pay:'aula',vinc:'',nf:false,phone:'',addr:'',perWeek:1,dur:60,price:80})},
  'student-edit'(a){openSheet('student',{...S(a),kind:kindOf(S(a)),pay:payOf(S(a)),dur:S(a).dur||60})},
  'student-wa'(a){const s=S(a);openUrl(waLink(s.phone,hello(s).replace(' Tudo bem? 😊','')+' '))},
  'save-student'(){readForm();const d=ui.sheet.d;if(!d.name.trim()){toast('Digite o nome');return}
-  const o={name:d.name.trim(),kind:d.kind,pay:d.pay,vinc:d.kind==='escola'?(d.vinc||'clt'):'',phone:d.phone.trim(),addr:d.addr.trim(),perWeek:Math.max(1,parseInt(d.perWeek)||1),dur:Math.max(15,parseInt(d.dur)||60),price:Math.max(0,num(d.price))};
+  const o={name:d.name.trim(),kind:d.kind,pay:d.pay,vinc:d.kind==='escola'?(d.vinc||'clt'):'',nf:d.nf===true||d.nf==='1',phone:d.phone.trim(),addr:d.addr.trim(),perWeek:Math.max(1,parseInt(d.perWeek)||1),dur:Math.max(15,parseInt(d.dur)||60),price:Math.max(0,num(d.price))};
   if(d.id)Object.assign(S(d.id),o);else db.students.push({id:uid(),...o});save();closeSheet();toast('Salvo')},
  'del-student'(){const d=ui.sheet.d;if(confirm('Excluir este cliente e todas as aulas dele? Isso não pode ser desfeito.')){db.students=db.students.filter(s=>s.id!==d.id);db.lessons=db.lessons.filter(l=>l.sid!==d.id);save();closeSheet();toast('Excluído')}},
  'sched-student'(){openSheet('new',newLessonDraft(ui.sheet.d.id))},
@@ -396,6 +402,7 @@ const A={
  async 'share-rep'(){const t=repText();if(navigator.share){try{await navigator.share({text:t})}catch(e){}}else{try{await navigator.clipboard.writeText(t);toast('Relatório copiado')}catch(e){prompt('Copie o relatório:',t)}}},
  charge(a){const o=pending()[a];if(o)openUrl(waLink(S(a).phone,chargeMsg(a,o)))},
  paid(a){const o=pending()[a];if(!o)return;if(confirm(`Marcar tudo de ${S(a).name} como pago?`)){o.ls.forEach(l=>{L(l.id).paid=true});o.fees.forEach(y=>{db.fees[a+':'+y]=true});save();render();toast('Pagamento registrado')}},
+ 'nf-done'(a){db.nf[a]=true;save();render();toast('Nota fiscal registrada')},
  'save-settings'(){readForm();db.settings.name=ui.sheet.d.name.trim()||'Mili';db.settings.pix=ui.sheet.d.pix.trim();save();closeSheet();toast('Salvo')},
  export(){const b=new Blob([JSON.stringify(db,null,1)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='aulas-backup-'+todayS()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)},
  import(){document.getElementById('imp').click()},
