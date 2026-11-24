@@ -12,15 +12,16 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <title>Aulas da Mili</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--ink:#1B2F5B;--blue:#1F4189;--deep:#1B3A78;--soft:#DCE8F7;--line:#B9CDEE;--bg:#F5F8FD;--muted:#43578A;--peach:#F2B8A2}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Lato',system-ui,sans-serif;font-size:16px}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Quicksand',system-ui,sans-serif;font-weight:500;font-size:16px}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
+body::before{content:'';position:fixed;top:0;left:0;right:0;height:max(env(safe-area-inset-top),1px);background:#1B3A78;z-index:40}
 #app{max-width:480px;margin:0 auto;min-height:100dvh;padding-bottom:120px}
-h1,h2,h3{font-family:'Playfair Display',serif;margin:0}
+h1,h2,h3{font-family:'Fraunces',serif;margin:0}
 .band{position:relative;color:#fff;padding:calc(env(safe-area-inset-top) + 18px) 24px 0;overflow:hidden}
 .band svg.bg{position:absolute;left:0;top:0;width:100%;height:100%}
 .band .in{position:relative;z-index:1}
@@ -47,7 +48,7 @@ h1,h2,h3{font-family:'Playfair Display',serif;margin:0}
 .card{flex:1;min-width:0;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:12px 14px}
 .card.off{opacity:.6}
 .card .t{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.card .n{font-family:'Playfair Display',serif;font-weight:700;font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .n{font-family:'Fraunces',serif;font-weight:700;font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card .a{font-size:13px;color:var(--muted);margin-top:3px}
 .chip{font-size:11px;font-weight:700;background:var(--soft);color:var(--ink);padding:4px 9px;border-radius:12px;white-space:nowrap}
 .chip.ok{background:#D6EFE2;color:#164A2F}.chip.warn{background:#F9E1D6;color:#7A2E14}.chip.gray{background:#E6E9F0;color:#3A4560}
@@ -73,7 +74,7 @@ h1,h2,h3{font-family:'Playfair Display',serif;margin:0}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:12px 14px}
 .tile small{display:block;font-size:12px;font-weight:700;color:var(--muted)}
-.tile b{font-family:'Playfair Display',serif;font-size:24px}
+.tile b{font-family:'Quicksand',sans-serif;font-weight:700;font-size:21px;white-space:nowrap}
 .tile.dk{background:var(--deep);border-color:var(--deep);color:#fff}.tile.dk small{color:#CFE0FA}
 .list{background:#fff;border:1.5px solid var(--line);border-radius:18px;overflow:hidden}
 .li{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid #E3ECF8;min-height:52px}
